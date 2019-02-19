@@ -69,10 +69,11 @@ trap cleanup EXIT
 
 # TODO: need params for these
 DISH_COUNT="${DISH_COUNT:-2}"
-DISH_GOOGLE_PROJECT="${DISH_GOOGLE_PROJECT:?DISH_GOOGLE_PROJECT must be set}"
+DISH_GOOGLE_PROJECT="${DISH_GOOGLE_PROJECT:-${GOOGLE_CLOUD_PROJECT:-none}}"
 DISH_GOOGLE_TAGS="${DISH_GOOGLE_TAGS:-managed-by-dish}"
 DISH_DRIVER_COMMON_ARGS="${DISH_DRIVER_COMMON_ARGS:---driver google --google-project $DISH_GOOGLE_PROJECT --google-tags $DISH_GOOGLE_TAGS --google-preemptible}"
 DISH_VM_NAME_PREFIX="${DISH_VM_NAME_PREFIX:-dish-vm-$(date +%s)-}"
+DISH_STDIN="${DISH_STDIN:-false}"
 
 declare -a instances=()
 declare -A create_pids=()
@@ -97,8 +98,10 @@ for instance in "${instances[@]}"; do
   status "==> $instance ready"
 done
 
-# TODO: maybe move... though this probs doesn't work when not sending in scripts
-stdin="$(cat)"
+# grab stdin
+if [[ "$DISH_STDIN" = "true" ]]; then
+	stdin="$(cat)"
+fi
 
 # run command
 section '==> run command'

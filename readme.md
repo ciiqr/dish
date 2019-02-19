@@ -8,4 +8,4 @@ Dish allows you to run arbitrary docker run commands on multiple (ephemeral) ser
 
 ## Examples
 * single command: `DISH_GOOGLE_PROJECT=gcp-project dish busybox wget -O- 'http://example.com/'`
-* shell script: `DISH_GOOGLE_PROJECT=gcp-project dish -i busybox /bin/sh -c 'cat | sh -s --' < some-script.sh`
+* shell script: `DISH_GOOGLE_PROJECT=gcp-project DISH_STDIN=true dish -i busybox /bin/sh -c 'cat | sh -s --' < some-script.sh`
