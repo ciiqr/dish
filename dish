@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+# dish
+
+set -e
+
+section()
+{
+	tput setaf 2
+	tput bold
+
+	echo "$@"
+
+	tput sgr0
+}
+
+# TODO: consider different colour/style per-vm (use base colours first, then bases with different backgrounds, then fg/bg/bold, etc)
+status()
+{
+	tput setaf 4
+
+	echo "$@"
+
+	tput sgr0
+}
+
+destroy_vms()
+{
+	# TODO: make these happen in parallel
+
+	# stop
+	section '==> stop vms'
+	for instance in "${instances[@]}"; do
+		docker-machine stop "$instance" >/dev/null || true
+		status "==> $instance stopped"
+	done
+
+	# deleted
+	section '==> deleted vms'
+	for instance in "${instances[@]}"; do
+		docker-machine rm -y "$instance" >/dev/null || true
+		status "==> $instance deleted"
+	done
+}
+
+cleanup()
+{
+	if [[ -v instances[@] ]]; then
+		destroy_vms
+	fi
+}
+
+trap cleanup EXIT
+
+# TODO: need params for these
+DISH_COUNT="${DISH_COUNT:-2}"
+DISH_GOOGLE_PROJECT="${DISH_GOOGLE_PROJECT:?DISH_GOOGLE_PROJECT must be set}"
+DISH_GOOGLE_TAGS="${DISH_GOOGLE_TAGS:-managed-by-dish}"
+DISH_DRIVER_COMMON_ARGS="${DISH_DRIVER_COMMON_ARGS:---driver google --google-project $DISH_GOOGLE_PROJECT --google-tags $DISH_GOOGLE_TAGS --google-preemptible}"
+DISH_VM_NAME_PREFIX="${DISH_VM_NAME_PREFIX:-dish-vm-$(date +%s)-}"
+
+declare -a instances=()
+declare -A create_pids=()
+
+# instance names
+for (( i = 1; i <= $DISH_COUNT; i++ )); do
+	instances+=("${DISH_VM_NAME_PREFIX}$(printf "%03d" "$i")")
+done
+
+# create vms
+section '==> create vms'
+for instance in "${instances[@]}"; do
+	docker-machine create $DISH_DRIVER_COMMON_ARGS "$instance" >/dev/null &
+	create_pids[$instance]=$!
+	status "==> creating $instance"
+done
+
+# wait for all instances to be created
+section '==> waiting for vms to be ready'
+for instance in "${instances[@]}"; do
+  wait "${create_pids[$instance]}"
+  status "==> $instance ready"
+done
+
+# run command
+section '==> run command'
+for instance in "${instances[@]}"; do
+	eval $(docker-machine env "$instance")
+	docker pull "$1" >/dev/null
+	# TODO: run in the background with output going to a file per vm, in a temp dir, then print out each vm's output once done executing
+	# TODO: maybe have a params to either, not run in background (thus sequential execution and output) or to run in background, but not to redirect output (thus live output): DISH_OUTPUT_MODE=(complete(ugh, needs a better name), sequential, live)
+	status "==> running $instance"
+	docker run --rm "$@"
+done
