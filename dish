@@ -4,24 +4,39 @@
 
 set -e
 
+colour()
+{
+	test -t 1 && tput "$@" || true
+}
+
 section()
 {
-	tput setaf 2
-	tput bold
+	colour setaf 2
+	colour bold
 
 	echo "$@"
 
-	tput sgr0
+	colour sgr0
 }
 
 # TODO: consider different colour/style per-vm (use base colours first, then bases with different backgrounds, then fg/bg/bold, etc)
 status()
 {
-	tput setaf 4
+	colour setaf 4
 
 	echo "$@"
 
-	tput sgr0
+	colour sgr0
+}
+
+extract_image_arg()
+{
+	for arg in "$@"; do
+		if [[ $arg != -* ]]; then
+			echo "$arg"
+			return
+		fi
+	done
 }
 
 destroy_vms()
@@ -82,13 +97,20 @@ for instance in "${instances[@]}"; do
   status "==> $instance ready"
 done
 
+# TODO: maybe move... though this probs doesn't work when not sending in scripts
+stdin="$(cat)"
+
 # run command
 section '==> run command'
 for instance in "${instances[@]}"; do
 	eval $(docker-machine env "$instance")
-	docker pull "$1" >/dev/null
+
+	docker pull "$(extract_image_arg "$@")" >/dev/null
+
 	# TODO: run in the background with output going to a file per vm, in a temp dir, then print out each vm's output once done executing
 	# TODO: maybe have a params to either, not run in background (thus sequential execution and output) or to run in background, but not to redirect output (thus live output): DISH_OUTPUT_MODE=(complete(ugh, needs a better name), sequential, live)
 	status "==> running $instance"
-	docker run --rm "$@"
+	docker run --rm "$@" <<< "$stdin" || true
+	# docker run --rm -i busybox /bin/sh -c 'cat | sh -s --' < okey.sh || true
+	# TODO: to make this easier, we can either have a custom script mode, or maybe it's fine to just take all stdin to dish and forward it to each run
 done
