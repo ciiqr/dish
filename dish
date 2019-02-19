@@ -69,18 +69,20 @@ trap cleanup EXIT
 
 # TODO: need params for these
 DISH_COUNT="${DISH_COUNT:-2}"
+DISH_NAME_PREFIX="${DISH_NAME_PREFIX:-dish-vm-$(date +%s)-}"
+DISH_STDIN="${DISH_STDIN:-false}"
+
 DISH_GOOGLE_PROJECT="${DISH_GOOGLE_PROJECT:-${GOOGLE_CLOUD_PROJECT:-none}}"
 DISH_GOOGLE_TAGS="${DISH_GOOGLE_TAGS:-managed-by-dish}"
 DISH_DRIVER_COMMON_ARGS="${DISH_DRIVER_COMMON_ARGS:---driver google --google-project $DISH_GOOGLE_PROJECT --google-tags $DISH_GOOGLE_TAGS --google-preemptible}"
-DISH_VM_NAME_PREFIX="${DISH_VM_NAME_PREFIX:-dish-vm-$(date +%s)-}"
-DISH_STDIN="${DISH_STDIN:-false}"
+
 
 declare -a instances=()
 declare -A create_pids=()
 
 # instance names
 for (( i = 1; i <= $DISH_COUNT; i++ )); do
-	instances+=("${DISH_VM_NAME_PREFIX}$(printf "%03d" "$i")")
+	instances+=("${DISH_NAME_PREFIX}$(printf "%03d" "$i")")
 done
 
 # create vms
