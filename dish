@@ -72,7 +72,7 @@ DISH_COUNT="${DISH_COUNT:-2}"
 DISH_NAME_PREFIX="${DISH_NAME_PREFIX:-dish-vm-$(date +%s)-}"
 DISH_STDIN="${DISH_STDIN:-false}"
 
-DISH_GOOGLE_PROJECT="${DISH_GOOGLE_PROJECT:-${GOOGLE_CLOUD_PROJECT:-none}}"
+DISH_GOOGLE_PROJECT="${DISH_GOOGLE_PROJECT:-${GOOGLE_CLOUD_PROJECT:-$(gcloud config get-value project)}}"
 DISH_GOOGLE_TAGS="${DISH_GOOGLE_TAGS:-managed-by-dish}"
 DISH_DRIVER_COMMON_ARGS="${DISH_DRIVER_COMMON_ARGS:---driver google --google-project $DISH_GOOGLE_PROJECT --google-tags $DISH_GOOGLE_TAGS --google-preemptible}"
 
