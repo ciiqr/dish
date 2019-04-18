@@ -96,8 +96,8 @@ done
 # wait for all instances to be created
 section '==> waiting for vms to be ready'
 for instance in "${instances[@]}"; do
-  wait "${create_pids[$instance]}"
-  status "==> $instance ready"
+	wait "${create_pids[$instance]}"
+	status "==> $instance ready"
 done
 
 # grab stdin
